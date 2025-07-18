@@ -1,63 +1,87 @@
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+import User from '../models/User.js';
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 
-
-// Signup Endpoint Logic
-// This function handles user registration, checks for existing users, hashes passwords, and returns a JWT token.
-exports.signup = async (req, res) => {
-    const { username, email, password } = req.body;
-
-    try {
-        // Check if user already exists
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ message: "User already exists" });
-        }
-
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Create new user
-        const newUser = new User({
-            username,
-            email,
-            password: hashedPassword,
-        });
-        await newUser.save();
-
-        // Generate JWT token
-        const token = jwt.sign({ id: newUser._id, role: newUser.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.status(201).json({ token });
-    } catch (error) {
-        console.error("Signup error:", error);
-        res.status(500).json({ message: "Internal server error" });
-    }
+const resetTokens = new Map();
+const generateToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
-// Login Endpoint Logic
-// This function handles user login, checks credentials, and returns a JWT token.
-exports.login = async (req, res) => {
-    const { email, password } = req.body;
+// new user reg
+export const registerUser = async (req, res) => {
+  const { username, password } = req.body;
 
-    try {
-        // Check if user exists
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(400).json({ message: "User not found" });
-        }
+  try {
+    const userExists = await User.findOne({ username });
+    if (userExists) return res.status(400).json({ error: 'User already exists' });
 
-        // Check password
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: "Incorrect password" });
-        }
+    const user = await User.create({ username, password });
+    res.status(201).json({
+      _id: user._id,
+      username: user.username,
+      token: generateToken(user._id),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
-        // Generate JWT token
-        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.status(200).json({ token });
-    } catch (error) {
-        console.error("Login error:", error);
-        res.status(500).json({ message: "Internal server error" });
+// Login an existing user
+export const loginUser = async (req, res) => {
+  const { username, password } = req.body;
+
+  try {
+    const user = await User.findOne({ username });
+    if (!user || !(await user.matchPassword(password))) {
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    res.json({
+      _id: user._id,
+      username: user.username,
+      token: generateToken(user._id),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Request password reset
+export const forgotPassword = async (req, res) => {
+  const { username } = req.body;
+
+  try {
+    const user = await User.findOne({ username });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const token = crypto.randomBytes(20).toString('hex');
+    resetTokens.set(token, user._id);
+
+    const resetLink = `http://localhost:5173/reset-password/${token}`;
+    console.log('🔗 Password reset link:', resetLink);
+
+    res.json({ message: 'Reset link generated. Check console for dev link.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// password reset
+export const resetPassword = async (req, res) => {
+  const { token } = req.params;
+  const { newPassword } = req.body;
+
+  try {
+    const userId = resetTokens.get(token);
+    if (!userId) return res.status(400).json({ error: 'Invalid or expired token' });
+
+    const user = await User.findById(userId);
+    user.password = newPassword;
+    await user.save();
+
+    resetTokens.delete(token);
+    res.json({ message: 'Password reset successful' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };

@@ -3,13 +3,13 @@ const router = express.Router();
 const { createCategory, getAllCategories, getCategoryById } = require("../controllers/categoryController");
 const { authenticate, authorize } = require("../middleware/auth");
 
-// POST /api/categories: Create a new category
-router.post("/", createCategory);
+// POST /api/categories: Create a new category (protected)
+router.post("/", authenticate, authorize(["admin", "editor"]), createCategory);
 
-// GET /api/categories: Get all categories
-router.get("/", getAllCategories, authenticate);
+// GET /api/categories: Get all categories (protected)
+router.get("/", authenticate, getAllCategories);
 
-// GET /api/categories/:id: Get a specific category
-router.get("/:id", getCategoryById, authenticate, authorize(["admin", "editor"]));
+// GET /api/categories/:id: Get a specific category (protected + authorized)
+router.get("/:id", authenticate, authorize(["admin", "editor"]), getCategoryById);
 
 module.exports = router;
