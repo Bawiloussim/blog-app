@@ -1,57 +1,48 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import toast from 'react-hot-toast';
+import express from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
-const Register = ({ onAuth }) => {
-  const [form, setForm] = useState({ username: '', password: '' });
-  const navigate = useNavigate();
+const router = express.Router();
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+// REGISTER (username + password only)
+router.post("/register", async (req, res) => {
+  try {
+    const { username, password } = req.body;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await axios.post('http://localhost:5000/api/auth/register', form);
-      localStorage.setItem('token', res.data.token);
-      toast.success('Registered successfully!');
-      if (onAuth) onAuth();
-      navigate('/');
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Registration failed');
+    // verify if fields are required
+    if (!username || !password) {
+      return res.status(400).json({ error: "Username and password are required" });
     }
-  };
 
-  return (
-    <div className="max-w-md mx-auto mt-20 bg-white p-6 rounded shadow">
-      <h2 className="text-2xl font-bold mb-4 text-center text-blue-600">Register</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="text"
-          name="username"
-          placeholder="Username"
-          value={form.username}
-          onChange={handleChange}
-          className="w-full border p-2 rounded"
-          required
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={handleChange}
-          className="w-full border p-2 rounded"
-          required
-        />
-        <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-          Register
-        </button>
-      </form>
-    </div>
-  );
-};
+    // verify if user already exit
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ error: "Username already exists" });
+    }
 
-export default Register;
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // create user
+    const newUser = new User({
+      username,
+      password: hashedPassword,
+    });
+    await newUser.save();
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: newUser._id, username: newUser.username },
+      process.env.JWT_SECRET || "secret123",
+      { expiresIn: "1h" }
+    );
+
+    res.status(201).json({ token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+export default router;
