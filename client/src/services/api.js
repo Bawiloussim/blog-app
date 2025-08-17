@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API = axios.create({ baseURL: import.meta.env.VITE_API_URL, withCredentials: true});
+const API = axios.create({ 
+    baseURL: import.meta.env.VITE_API_URL,
+});
 
 export const fetchBlogs = () => API.get('/blogs');
 export const fetchBlog = (id) => API.get(`/blogs/${id}`);
