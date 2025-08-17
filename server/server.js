@@ -31,7 +31,7 @@ const allowedOrigins =[
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Autoriser Postman / curl (pas d’origin)
+      // Autoriser Postman / curl
       if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
@@ -43,8 +43,6 @@ app.use(
     exposedHeaders: ['Content-Range', 'X-Total-Count'],
   })
 );
-
-
 
 app.use(express.json());
 
