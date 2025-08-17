@@ -21,28 +21,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 
-const allowedOrigins =[
-  'http://localhost:5173',           // local dev
-  'https://blog-app-murex-ten.vercel.app'   // Production
-];
-
-
 // Middleware
 app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Autoriser Postman / curl
-      if (!origin || allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true,
-    methods: 'GET, POST, PUT, DELETE',
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    exposedHeaders: ['Content-Range', 'X-Total-Count'],
-  })
-);
+  cors());
 
 app.use(express.json());
 
