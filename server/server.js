@@ -8,18 +8,37 @@ import { fileURLToPath } from 'url';
 import commentRoutes from './routes/commentRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import { connect } from 'http2';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
 
+
 // Required for __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+
+const allowedOrigins =[
+  'http://localhost:5173',           // local dev
+  'https://blog-app-murex-ten.vercel.app/'   // Production
+];
+
+
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow Postman/ curl with send no origin
+      if(!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    },
+    credentials: true,
+    methods: 'GET, POST, PUT, DELETE',
+    allowedHeaders: 'Content-Type, Authorization',
+    exposedHeaders: ['Content-Range', 'X-Total-Count']
+  }));
 app.use(express.json());
 
 // Serve uploaded images
