@@ -23,7 +23,7 @@ const __dirname = path.dirname(__filename);
 
 const allowedOrigins =[
   'http://localhost:5173',           // local dev
-  'https://blog-app-murex-ten.vercel.app/'   // Production
+  'https://blog-app-murex-ten.vercel.app'   // Production
 ];
 
 
@@ -31,14 +31,21 @@ const allowedOrigins =[
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow Postman/ curl with send no origin
-      if(!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      // Autoriser Postman / curl (pas d’origin)
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
     methods: 'GET, POST, PUT, DELETE',
-    allowedHeaders: 'Content-Type, Authorization',
-    exposedHeaders: ['Content-Range', 'X-Total-Count']
-  }));
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Content-Range', 'X-Total-Count'],
+  })
+);
+
+
+
 app.use(express.json());
 
 // Serve uploaded images
