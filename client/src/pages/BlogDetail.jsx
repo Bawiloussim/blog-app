@@ -123,7 +123,7 @@ const BlogDetail = () => {
             <div key={comment._id} className="border-t py-2 flex justify-between items-start">
               <div>
                 <p className="text-sm text-gray-600">
-                  <strong>{comment.author}</strong> ·{' '}
+                  <strong>{comment.author || comment.username || "Anonymous"}</strong> ·{' '}
                   {new Date(comment.createdAt).toLocaleString()}
                 </p>
                 {editingCommentId === comment._id ? (
