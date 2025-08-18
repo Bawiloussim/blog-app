@@ -14,8 +14,7 @@ const Register = ({ onAuth }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/register', form);
-      localStorage.setItem('token', res.data.token);
+      await axios.post('http://localhost:5000/api/auth/register', form);
       toast.success('Registered successfully!');
       if (onAuth) onAuth();
       navigate('/');
