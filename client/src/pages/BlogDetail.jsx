@@ -14,7 +14,7 @@ const BlogDetail = () => {
   useEffect(() => {
     const fetchBlog = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/blogs/${id}`);
+        const res = await axios.get('https://ton-backend.onrender.com/api/blogs/' + id);
         setBlog(res.data);
       } catch (err) {
         console.error('Failed to fetch blog:', err);
@@ -39,10 +39,10 @@ const BlogDetail = () => {
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     try {
-      const author = localStorage.getItem('username') || 'Anonymous';
+      const username = localStorage.getItem('username') || 'Anonymous';
       const res = await axios.post('http://localhost:5000/api/comments', {
         blogId: id,
-        author,
+        username,
         text: newComment,
       });
       setComments([res.data, ...comments]);
@@ -123,7 +123,7 @@ const BlogDetail = () => {
             <div key={comment._id} className="border-t py-2 flex justify-between items-start">
               <div>
                 <p className="text-sm text-gray-600">
-                  <strong>{comment.author || comment.username || "Anonymous"}</strong> ·{' '}
+                  <strong>{comment.username || "Anonymous"}</strong> ·{' '}
                   {new Date(comment.createdAt).toLocaleString()}
                 </p>
                 {editingCommentId === comment._id ? (

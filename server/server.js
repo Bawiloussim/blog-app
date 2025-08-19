@@ -15,14 +15,15 @@ dotenv.config();
 
 const app = express();
 
-
 // Required for __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'https://blog-app-murex-ten.vercel.app'
+}));
 
 app.use(express.json());
 
